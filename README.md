@@ -41,6 +41,26 @@ A powerful computer vision tool built for the **LabLab AI Hackathon**. "Mirror" 
     streamlit run app.py
     ```
 
+## 🚀 Deploying to Vultr
+Start the application on a public IP address (Port 80) by running the setup script from the Vultr console:
+
+1.  **SSH into your Vultr Instance**
+2.  **Run the Setup Script**:
+    ```bash
+    sudo ./setup_vultr.sh
+    ```
+    This will:
+    - Install all dependencies (including `ffmpeg`)
+    - Set up a virtual environment
+    - Open the firewall (Port 80)
+    - Launch the app in the background
+
+3.  **Access the App**:
+    Open your browser and navigate to:
+    ```
+    http://<YOUR_VULTR_PUBLIC_IP>/
+    ```
+
 ## How to Use
 
 1.  **Upload Video**: Drag and drop an `.mp4` or `.mov` file.

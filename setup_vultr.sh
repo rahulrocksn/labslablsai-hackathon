@@ -12,7 +12,7 @@ fi
 # 2. Update system and install system dependencies
 echo "Updating system packages..."
 apt-get update
-apt-get install -y python3-pip python3-venv git libgl1-mesa-glx libglib2.0-0 curl
+apt-get install -y python3-pip python3-venv git libgl1-mesa-glx libglib2.0-0 curl ffmpeg
 
 # 3. Create a virtual environment (optional but recommended)
 if [ ! -d "venv" ]; then
