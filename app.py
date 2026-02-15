@@ -421,13 +421,13 @@ def smooth_path(coords, window_size=5):
         
     return smoothed
 
-import google.generativeai as genai
+import requests
+import json
 
 def analyze_movement_with_llm(coords, api_key=None):
     """
-    Sends tracking data to Google Gemini to generate a natural language description and safety check.
+    Sends tracking data to Google Gemini via direct REST API to bypass potential SDK issues.
     """
-    # Sample the path to avoid token limits (Start, Middle, End)
     if not coords:
         return "No tracking data available."
         
@@ -447,30 +447,50 @@ def analyze_movement_with_llm(coords, api_key=None):
     - Total Points: {len(coords)}
     - Workspace Span: X={x_range:.2f}, Y={y_range:.2f}
     
-    1. Describe the movement in plain English (e.g., "A lifting motion moving right").
-    2. Assess safety: Is it erratic or smooth? (Assume normalized 0-1 coordinates).
-    3. Suggest one optimization for a Vultr Cloud run.
+    1. Describe the movement in plain English.
+    2. Assess safety (Smoothness/Jitter).
+    3. Suggest one optimization for Vultr Cloud.
     
-    Keep response concise and futuristic.
+    Keep response concise.
     """
     
     if not api_key:
-        # Mock Response for Demo
         return f"""
         **🤖 Gemini Copilot Analysis (Demo Mode)**
         
-        1. **Movement Description**: Detected a precise linear translation from left-center to the upper quadrant. The motion suggests a 'Pick-and-Place' operation.
-        2. **Safety Assessment**: ✅ **SAFE**. The path shows consistent velocity with minimal jitter (Score: 92/100).
-        3. **Optimization**: Recommended caching this trajectory on the **Vultr Edge** to reduce latency for repetitive tasks.
+        *Please enter your API Key to enable live analysis.*
         
-        *(Enter a Google Gemini API Key in the sidebar to get real-time analysis)*
+        1. **Movement**: Inferred linear translation based on {len(coords)} points.
+        2. **Safety**: ✅ Safe for low-speed operation.
+        3. **Optimization**: Cache path on Vultr Edge.
         """
     
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-pro')
-        response = model.generate_content(prompt)
-        return response.text
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+        headers = {'Content-Type': 'application/json'}
+        data = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }]
+        }
+        
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        
+        if response.status_code == 200:
+            return response.json()['candidates'][0]['content']['parts'][0]['text']
+        elif response.status_code == 429:
+             return f"""
+            **🤖 Gemini Copilot Analysis (Simulated Fallback)**
+            
+            *⚠️ API Rate Limit Reached (429). Switch to a paid API key or wait a moment.*
+            
+            1. **Movement Description**: Analysis of {len(coords)} points indicates a rapid traversal across the X-axis ({x_range:.2f} span). 
+            2. **Safety Assessment**: ⚠️ **CAUTION**. High-demand period detected. Verify local obstacle clearance.
+            3. **Optimization**: **Vultr Auto-Scaling**: Deploy to high-availability nodes.
+            """
+        else:
+            return f"Error: {response.status_code} - {response.text}"
+
     except Exception as e:
         return f"Error connecting to Gemini: {e}"
 
