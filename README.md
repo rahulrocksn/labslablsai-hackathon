@@ -4,19 +4,18 @@
 
 A powerful computer vision tool built for the **LabLab AI Hackathon**. "Mirror" takes a video of a human hand gesture (or any tracked object), extracts the 3D motion path, and converts it into executable robot code.
 
-![Screen Shot](https://via.placeholder.com/800x450?text=Mirror+App+Screenshot+Here)
 
-## 🚀 Features
+## Features
 
 -   **Multi-Mode Tracking**:
-    -   ✋ **Hand Tracking**: Uses MediaPipe to track the Index Finger Tip with high precision.
-    -   📦 **Object Tracking**: Draw a box around *any* object to track it using OpenCV CSRT.
+    -   **Hand Tracking**: Uses MediaPipe to track the Index Finger Tip with high precision.
+    -   **Object Tracking**: Draw a box around *any* object to track it using OpenCV CSRT.
 -   **3D Visualization**: Real-time 3D plotting of the motion path.
 -   **Path Smoothing**: Built-in Moving Average filter to create production-ready robot trajectories.
 -   **Visual Debugging**: View the "Digital Twin" video with tracking overlays to verify accuracy.
 -   **Cloud Deployment**: Simulated one-click deployment to **Vultr Kubernetes Engine**.
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 -   **Frontend**: Streamlit
 -   **Computer Vision**: OpenCV, MediaPipe
@@ -24,7 +23,7 @@ A powerful computer vision tool built for the **LabLab AI Hackathon**. "Mirror" 
 -   **Visualization**: Matplotlib (3D)
 -   **Infrastructure**: Vultr ( Simulated Integration)
 
-## 📦 Installation
+## Installation
 
 1.  Clone the repo:
     ```bash
@@ -42,7 +41,7 @@ A powerful computer vision tool built for the **LabLab AI Hackathon**. "Mirror" 
     streamlit run app.py
     ```
 
-## 🎮 How to Use
+## How to Use
 
 1.  **Upload Video**: Drag and drop an `.mp4` or `.mov` file.
 2.  **Select Mode**:
