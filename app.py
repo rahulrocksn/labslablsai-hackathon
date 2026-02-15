@@ -83,6 +83,12 @@ with st.sidebar:
     )
     
     st.markdown("---")
+    # API Key for LLM
+    api_key_input = st.text_input("OpenAI API Key (Optional)", type="password")
+    if api_key_input:
+        st.session_state.api_key = api_key_input
+    
+    st.markdown("---")
     st.markdown("**System Status**")
     status_text = st.empty()
     status_text.text("🟢 System Ready")
@@ -415,6 +421,65 @@ def smooth_path(coords, window_size=5):
         
     return smoothed
 
+import openai
+
+def analyze_movement_with_llm(coords, api_key=None):
+    """
+    Sends tracking data to an LLM to generate a natural language description and safety check.
+    """
+    # Sample the path to avoid token limits (Start, Middle, End)
+    if not coords:
+        return "No tracking data available."
+        
+    start = coords[0]
+    end = coords[-1]
+    mid = coords[len(coords)//2]
+    
+    # Calculate simple metrics
+    x_range = max(c[0] for c in coords) - min(c[0] for c in coords)
+    y_range = max(c[1] for c in coords) - min(c[1] for c in coords)
+    
+    prompt = f"""
+    Act as a Senior Robotics Safety Engineer. Analyze this robot arm trajectory:
+    - Start Point: {start}
+    - Mid Point: {mid}
+    - End Point: {end}
+    - Total Points: {len(coords)}
+    - Workspace Span: X={x_range:.2f}, Y={y_range:.2f}
+    
+    1. Describe the movement in plain English (e.g., "A lifting motion moving right").
+    2. Assess safety: Is it erratic or smooth? (Assume normalized 0-1 coordinates).
+    3. Suggest one optimization for a Vultr Cloud run.
+    
+    Keep response concise and futuristic.
+    """
+    
+    if not api_key:
+        # Mock Response for Demo
+        return f"""
+        **🤖 AI Copilot Analysis (Demo Mode)**
+        
+        1. **Movement Description**: Detected a precise linear translation from left-center to the upper quadrant. The motion suggests a 'Pick-and-Place' operation.
+        2. **Safety Assessment**: ✅ **SAFE**. The path shows consistent velocity with minimal jitter (Score: 92/100).
+        3. **Optimization**: Recommended caching this trajectory on the **Vultr Edge** to reduce latency for repetitive tasks.
+        
+        *(Enter an OpenAI API Key in the sidebar to get real-time analysis)*
+        """
+    
+    try:
+        client = openai.OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are MirrorAI, an advanced robotics assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=200
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error connecting to AI: {e}"
+
 # --- Main Application Logic ---
 
 if uploaded_file is not None:
@@ -536,10 +601,8 @@ if uploaded_file is not None:
         if raw_coords:
             # Smoothing Option
             use_smoothing = st.checkbox("Apply Smoothing Filter (Moving Average)", value=True)
-            
             if use_smoothing:
                 coords = smooth_path(raw_coords)
-                st.info(f"Smoothed path: {len(raw_coords)} points -> Smooth Curve")
             else:
                 coords = raw_coords
             
@@ -547,6 +610,18 @@ if uploaded_file is not None:
             st.markdown("#### 3D Trajectory Visualization")
             fig = plot_3d_trajectory(coords)
             st.pyplot(fig)
+            
+            # --- AI Copilot Section (New!) ---
+            with st.expander("🤖 AI Copilot Analysis", expanded=True):
+                # Check for API Key in Sidebar
+                api_key = st.session_state.get('api_key', '')
+                if st.button("Analyze Movement"):
+                     with st.spinner("Consulting MirrorAI..."):
+                         analysis = analyze_movement_with_llm(coords, api_key)
+                         st.markdown(analysis)
+
+
+
             
             # 2. Code Generation
             st.markdown("#### Generated Robot Control Code")
