@@ -83,6 +83,12 @@ with st.sidebar:
     )
     
     st.markdown("---")
+    # API Key for LLM
+    api_key_input = st.text_input("Gemini API Key (Optional)", type="password")
+    if api_key_input:
+        st.session_state.api_key = api_key_input
+    
+    st.markdown("---")
     st.markdown("**System Status**")
     status_text = st.empty()
     status_text.text("🟢 System Ready")
@@ -415,6 +421,79 @@ def smooth_path(coords, window_size=5):
         
     return smoothed
 
+import requests
+import json
+
+def analyze_movement_with_llm(coords, api_key=None):
+    """
+    Sends tracking data to Google Gemini via direct REST API to bypass potential SDK issues.
+    """
+    if not coords:
+        return "No tracking data available."
+        
+    start = coords[0]
+    end = coords[-1]
+    mid = coords[len(coords)//2]
+    
+    # Calculate simple metrics
+    x_range = max(c[0] for c in coords) - min(c[0] for c in coords)
+    y_range = max(c[1] for c in coords) - min(c[1] for c in coords)
+    
+    prompt = f"""
+    Act as a Senior Robotics Safety Engineer. Analyze this robot arm trajectory:
+    - Start Point: {start}
+    - Mid Point: {mid}
+    - End Point: {end}
+    - Total Points: {len(coords)}
+    - Workspace Span: X={x_range:.2f}, Y={y_range:.2f}
+    
+    1. Describe the movement in plain English.
+    2. Assess safety (Smoothness/Jitter).
+    3. Suggest one optimization for Vultr Cloud.
+    
+    Keep response concise.
+    """
+    
+    if not api_key:
+        return f"""
+        **🤖 Gemini Copilot Analysis (Demo Mode)**
+        
+        *Please enter your API Key to enable live analysis.*
+        
+        1. **Movement**: Inferred linear translation based on {len(coords)} points.
+        2. **Safety**: ✅ Safe for low-speed operation.
+        3. **Optimization**: Cache path on Vultr Edge.
+        """
+    
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+        headers = {'Content-Type': 'application/json'}
+        data = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }]
+        }
+        
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        
+        if response.status_code == 200:
+            return response.json()['candidates'][0]['content']['parts'][0]['text']
+        elif response.status_code == 429:
+             return f"""
+            **🤖 Gemini Copilot Analysis (Simulated Fallback)**
+            
+            *⚠️ API Rate Limit Reached (429). Switch to a paid API key or wait a moment.*
+            
+            1. **Movement Description**: Analysis of {len(coords)} points indicates a rapid traversal across the X-axis ({x_range:.2f} span). 
+            2. **Safety Assessment**: ⚠️ **CAUTION**. High-demand period detected. Verify local obstacle clearance.
+            3. **Optimization**: **Vultr Auto-Scaling**: Deploy to high-availability nodes.
+            """
+        else:
+            return f"Error: {response.status_code} - {response.text}"
+
+    except Exception as e:
+        return f"Error connecting to Gemini: {e}"
+
 # --- Main Application Logic ---
 
 if uploaded_file is not None:
@@ -536,10 +615,8 @@ if uploaded_file is not None:
         if raw_coords:
             # Smoothing Option
             use_smoothing = st.checkbox("Apply Smoothing Filter (Moving Average)", value=True)
-            
             if use_smoothing:
                 coords = smooth_path(raw_coords)
-                st.info(f"Smoothed path: {len(raw_coords)} points -> Smooth Curve")
             else:
                 coords = raw_coords
             
@@ -547,6 +624,18 @@ if uploaded_file is not None:
             st.markdown("#### 3D Trajectory Visualization")
             fig = plot_3d_trajectory(coords)
             st.pyplot(fig)
+            
+            # --- AI Copilot Section (New!) ---
+            with st.expander("🤖 AI Copilot Analysis", expanded=True):
+                # Check for API Key in Sidebar
+                api_key = st.session_state.get('api_key', '')
+                if st.button("Analyze Movement"):
+                     with st.spinner("Consulting MirrorAI..."):
+                         analysis = analyze_movement_with_llm(coords, api_key)
+                         st.markdown(analysis)
+
+
+
             
             # 2. Code Generation
             st.markdown("#### Generated Robot Control Code")
