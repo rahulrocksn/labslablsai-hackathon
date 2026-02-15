@@ -84,7 +84,7 @@ with st.sidebar:
     
     st.markdown("---")
     # API Key for LLM
-    api_key_input = st.text_input("OpenAI API Key (Optional)", type="password")
+    api_key_input = st.text_input("Gemini API Key (Optional)", type="password")
     if api_key_input:
         st.session_state.api_key = api_key_input
     
@@ -421,11 +421,11 @@ def smooth_path(coords, window_size=5):
         
     return smoothed
 
-import openai
+import google.generativeai as genai
 
 def analyze_movement_with_llm(coords, api_key=None):
     """
-    Sends tracking data to an LLM to generate a natural language description and safety check.
+    Sends tracking data to Google Gemini to generate a natural language description and safety check.
     """
     # Sample the path to avoid token limits (Start, Middle, End)
     if not coords:
@@ -457,28 +457,22 @@ def analyze_movement_with_llm(coords, api_key=None):
     if not api_key:
         # Mock Response for Demo
         return f"""
-        **🤖 AI Copilot Analysis (Demo Mode)**
+        **🤖 Gemini Copilot Analysis (Demo Mode)**
         
         1. **Movement Description**: Detected a precise linear translation from left-center to the upper quadrant. The motion suggests a 'Pick-and-Place' operation.
         2. **Safety Assessment**: ✅ **SAFE**. The path shows consistent velocity with minimal jitter (Score: 92/100).
         3. **Optimization**: Recommended caching this trajectory on the **Vultr Edge** to reduce latency for repetitive tasks.
         
-        *(Enter an OpenAI API Key in the sidebar to get real-time analysis)*
+        *(Enter a Google Gemini API Key in the sidebar to get real-time analysis)*
         """
     
     try:
-        client = openai.OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are MirrorAI, an advanced robotics assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=200
-        )
-        return response.choices[0].message.content
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt)
+        return response.text
     except Exception as e:
-        return f"Error connecting to AI: {e}"
+        return f"Error connecting to Gemini: {e}"
 
 # --- Main Application Logic ---
 

@@ -5,4 +5,4 @@ numpy
 matplotlib
 streamlit-drawable-canvas
 opencv-contrib-python
-openai
+google-generativeai
